@@ -7,6 +7,12 @@ const ACTIONS = {
   health: 'health'
 };
 
+// Bump this whenever the job-details parser/response contract changes. The
+// forced upstream query value changes Cloudflare's cache key immediately,
+// without exposing or accepting overrides for upstream configuration values.
+const DETAIL_CACHE_VERSION = 'detail-parser-v2';
+const DETAIL_CACHE_SECONDS = 300;
+
 function jsonError(error, status, headers = {}) {
   return Response.json(
     {ok: false, error},
@@ -52,10 +58,19 @@ async function proxyRequest(context) {
 
   const incomingUrl = new URL(request.url);
   const target = new URL(upstreamUrl);
+  incomingUrl.searchParams.forEach((value, key) => {
+    // Preserve configured upstream parameters (including any secret) and keep
+    // routing/cache controls server-owned.
+    if (key !== 'action' && key !== 'detail_version' && !target.searchParams.has(key)) {
+      target.searchParams.set(key, value);
+    }
+  });
   target.searchParams.set('action', action);
-  incomingUrl.searchParams.forEach((value, key) => target.searchParams.set(key, value));
+  if (action === 'job_details') {
+    target.searchParams.set('detail_version', DETAIL_CACHE_VERSION);
+  }
 
-  const cacheSeconds = action === 'job_details' ? 3600 : action === 'health' ? 15 : action === 'meta' ? 60 : 300;
+  const cacheSeconds = action === 'job_details' ? DETAIL_CACHE_SECONDS : action === 'health' ? 15 : action === 'meta' ? 60 : 300;
 
   try {
     const response = await fetch(target.toString(), {
