@@ -1,20 +1,20 @@
 # GovJob India
 
-GovJob India is a government-jobs portal with a Google Apps Script scraping/API backend, Google Sheets persistence, and a Cloudflare Worker serving a static frontend.
+GovJob India is a government-jobs portal with a Google Apps Script scraping/API backend, Google Sheets persistence, and a static frontend on Cloudflare Pages.
 
 ## Architecture
 
 1. Time-driven Apps Script triggers scrape all configured listing pages in batches.
 2. Normalized jobs and structured details are stored in Google Sheets.
 3. The Apps Script Web App exposes read-only JSON actions.
-4. A Cloudflare Worker proxies same-origin `/api/*` requests to Apps Script and serves static assets.
+4. A Cloudflare Pages Function proxies same-origin `/api/*` requests to Apps Script while Pages serves the static assets.
 5. The static frontend uses only the Cloudflare API routes.
 
 ## Structure
 
 - `apps-script/` — Apps Script scraper, Sheets repository, triggers, and JSON API.
 - `cloudflare/public/` — static frontend.
-- `cloudflare/src/index.js` — Worker entry module and API proxy.
+- `cloudflare/functions/api/[[path]].js` — Pages Function for the API proxy.
 - `.old/` — ignored snapshot of the previous Flask/Supabase implementation.
 
 ## Backend setup
@@ -38,19 +38,13 @@ Apps Script actions:
 
 ## Cloudflare setup
 
-1. Create a Cloudflare Workers Builds project connected to the repository, with root directory `cloudflare`.
-2. Build command: `npm run build`.
-3. Deploy command: `npx wrangler deploy`.
-4. Add the encrypted runtime secret `APPS_SCRIPT_API_URL` containing the Apps Script `/exec` deployment URL.
-5. Deploy the Worker. The `ASSETS` binding uploads `dist` and the Worker handles the existing `/api/*` routes.
-
-For a CLI-managed deployment, set the secret without putting its value in a tracked file:
-
-```bash
-cd cloudflare
-npx wrangler secret put APPS_SCRIPT_API_URL
-npm run deploy
-```
+1. In Cloudflare **Workers & Pages**, create a **Pages** application and connect this Git repository.
+2. Select `main` as the production branch.
+3. Set the project name to `govjob-india`. This name controls the default `project.pages.dev` hostname (`govjob-india.pages.dev`). If unavailable, choose another neutral project name or use a custom domain so the public URL does not contain an account/person name.
+4. Set framework preset **None**, root directory `cloudflare`, build command `npm run build`, and output directory `dist`.
+5. Leave the deploy command blank. Cloudflare Pages deploys `dist` automatically after the build.
+6. In **Settings** > **Environment variables**, add encrypted `APPS_SCRIPT_API_URL` with the Apps Script `/exec` deployment URL. Add it separately to Production and Preview as needed; never put the real URL in tracked files.
+7. Deploy and verify the assigned hostname ends with `.pages.dev`, then test `/api/health`.
 
 Local frontend development:
 

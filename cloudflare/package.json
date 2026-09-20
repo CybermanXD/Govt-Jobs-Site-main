@@ -3,9 +3,8 @@
   "private": true,
   "scripts": {
     "build": "node build.mjs",
-    "check": "node --check src/index.js && npm run build && wrangler deploy --dry-run --outdir .wrangler/dry-run",
-    "dev": "npm run build && wrangler dev",
-    "deploy": "npm run build && wrangler deploy"
+    "check": "node --check functions/api/[[path]].js && npm run build",
+    "dev": "npm run build && wrangler pages dev dist"
   },
   "devDependencies": {
     "wrangler": "^4.0.0"

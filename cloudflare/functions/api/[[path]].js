@@ -35,11 +35,10 @@ function getUpstreamUrl(env) {
   }
 }
 
-async function proxyApi(request, env, route) {
-  if (request.method !== 'GET') {
-    return jsonError('Method not allowed', 405, {Allow: 'GET'});
-  }
-
+async function proxyRequest(context) {
+  const {env, params, request} = context;
+  const path = Array.isArray(params.path) ? params.path : [params.path];
+  const route = path.filter(Boolean).join('/');
   const action = ACTIONS[route];
   if (!action) return jsonError('Unknown API route', 404);
 
@@ -81,14 +80,9 @@ async function proxyApi(request, env, route) {
   }
 }
 
-export default {
-  async fetch(request, env) {
-    const {pathname} = new URL(request.url);
-    const match = pathname.match(/^\/api\/([^/]+)\/?$/);
-
-    if (match) return proxyApi(request, env, decodeURIComponent(match[1]));
-    if (pathname === '/api' || pathname.startsWith('/api/')) return jsonError('Unknown API route', 404);
-
-    return env.ASSETS.fetch(request);
+export function onRequest(context) {
+  if (context.request.method !== 'GET') {
+    return jsonError('Method not allowed', 405, {Allow: 'GET'});
   }
-};
+  return proxyRequest(context);
+}
