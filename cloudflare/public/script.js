@@ -6,7 +6,7 @@ const esc = value => String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;',
 const formatDate = value => { if (!value) return 'N/A'; const d = new Date(value); return isNaN(d) ? value : d.toLocaleDateString('en-IN',{year:'numeric',month:'short',day:'numeric'}); };
 
 async function api(path) { const response = await fetch(`/api/${path}`, {headers:{Accept:'application/json'}}); if (!response.ok) throw new Error(`API ${response.status}`); return response.json(); }
-function showLoading(show) { $('loading-overlay').style.display = show ? 'flex' : 'none'; }
+function showLoading(show) { const overlay=$('loading-overlay'); if(overlay) overlay.style.display=show?'flex':'none'; }
 function processJob(job, index) { return {...job, id: job.id || `job-${index}`}; }
 
 async function loadJobs() {
