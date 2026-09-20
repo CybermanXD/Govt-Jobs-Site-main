@@ -1,0 +1,11 @@
+{
+  "name": "govjob-india-cloudflare",
+  "private": true,
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "wrangler pages dev dist"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
