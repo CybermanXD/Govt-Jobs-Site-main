@@ -10,6 +10,7 @@ cloudflare/.dev.vars
 cloudflare/dist/
 
 # Apps Script local credentials/build artifacts
+apps-script/
 apps-script/.clasp.json
 apps-script/.claspignore.local
 apps-script/.claspignore
