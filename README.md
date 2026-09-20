@@ -76,3 +76,6 @@ APPS_SCRIPT_API_URL=https://script.google.com/macros/s/DEPLOYMENT_ID/exec
 - Cleanup and cache rebuild: daily.
 
 The source cursor allows full coverage across multiple Apps Script executions without exceeding runtime quotas.
+# GovJob India
+
+GovJob India provides a Cloudflare-hosted job website and a native Android client. Android source, architecture, setup, offline-cache details, and release instructions are documented in [`android-app/README.md`](android-app/README.md).

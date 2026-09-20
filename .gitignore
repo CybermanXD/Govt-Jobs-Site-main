@@ -22,3 +22,24 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+
+# Android local state and generated intermediates
+android-app/.gradle/
+android-app/.gradle-bootstrap/
+android-app/.kotlin/
+android-app/.idea/
+android-app/local.properties
+android-app/**/build/
+android-app/captures/
+android-app/.cxx/
+android-app/*.iml
+android-app/signing.properties
+android-app/.signing/
+*.jks
+*.keystore
+
+# Root build output is ignored except the requested distributable and docs
+build/*
+!build/govjob-india-v1.0.0.apk
+!build/README.md
+!build/SHA256SUMS.txt

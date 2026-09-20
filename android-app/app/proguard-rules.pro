@@ -1,0 +1,3 @@
+-keepattributes Signature,*Annotation*
+-keep class com.govjobindia.app.core.network.** { *; }
+-dontwarn org.conscrypt.**
