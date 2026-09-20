@@ -1,20 +1,20 @@
 # GovJob India
 
-GovJob India is a government-jobs portal with a Google Apps Script scraping/API backend, Google Sheets persistence, and a Cloudflare Pages static frontend.
+GovJob India is a government-jobs portal with a Google Apps Script scraping/API backend, Google Sheets persistence, and a Cloudflare Worker serving a static frontend.
 
 ## Architecture
 
 1. Time-driven Apps Script triggers scrape all configured listing pages in batches.
 2. Normalized jobs and structured details are stored in Google Sheets.
 3. The Apps Script Web App exposes read-only JSON actions.
-4. Cloudflare Pages Functions proxy same-origin `/api/*` requests to Apps Script.
+4. A Cloudflare Worker proxies same-origin `/api/*` requests to Apps Script and serves static assets.
 5. The static frontend uses only the Cloudflare API routes.
 
 ## Structure
 
 - `apps-script/` — Apps Script scraper, Sheets repository, triggers, and JSON API.
 - `cloudflare/public/` — static frontend.
-- `cloudflare/functions/api/` — API proxy.
+- `cloudflare/src/index.js` — Worker entry module and API proxy.
 - `.old/` — ignored snapshot of the previous Flask/Supabase implementation.
 
 ## Backend setup
@@ -38,11 +38,19 @@ Apps Script actions:
 
 ## Cloudflare setup
 
-1. Create a Cloudflare Pages project with repository root `cloudflare`.
+1. Create a Cloudflare Workers Builds project connected to the repository, with root directory `cloudflare`.
 2. Build command: `npm run build`.
-3. Build output directory: `dist`.
-4. Add environment variable `APPS_SCRIPT_API_URL` containing the Apps Script `/exec` deployment URL.
-5. Deploy.
+3. Deploy command: `npx wrangler deploy`.
+4. Add the encrypted runtime secret `APPS_SCRIPT_API_URL` containing the Apps Script `/exec` deployment URL.
+5. Deploy the Worker. The `ASSETS` binding uploads `dist` and the Worker handles the existing `/api/*` routes.
+
+For a CLI-managed deployment, set the secret without putting its value in a tracked file:
+
+```bash
+cd cloudflare
+npx wrangler secret put APPS_SCRIPT_API_URL
+npm run deploy
+```
 
 Local frontend development:
 
