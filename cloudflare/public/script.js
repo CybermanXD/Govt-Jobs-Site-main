@@ -1,13 +1,62 @@
 let jobs = [], currentFilteredJobs = [], currentPage = 1, detailsByUrl = {};
 const itemsPerPage = 12;
 const ALL_STATES = ['Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chhattisgarh','Goa','Gujarat','Haryana','Himachal Pradesh','Jharkhand','Karnataka','Kerala','Madhya Pradesh','Maharashtra','Manipur','Meghalaya','Mizoram','Nagaland','Odisha','Punjab','Rajasthan','Sikkim','Tamil Nadu','Telangana','Tripura','Uttar Pradesh','Uttarakhand','West Bengal','Andaman and Nicobar Islands','Chandigarh','Dadra and Nagar Haveli and Daman and Diu','Delhi','Jammu and Kashmir','Ladakh','Lakshadweep','Puducherry'];
+const STATE_ALIASES = [
+  ['Andhra Pradesh',['andhra pradesh','andhra','amaravati','visakhapatnam','vijayawada','tirupati','korukonda','appsc','apsrtc']],
+  ['Arunachal Pradesh',['arunachal pradesh','itanagar','arunachal psc','appsc arunachal']],
+  ['Assam',['assam','guwahati','dispur','jorhat','dibrugarh','apsc','assam psc']],
+  ['Bihar',['bihar','patna','bpsc','bihar psc','bssc']],
+  ['Chhattisgarh',['chhattisgarh','chattisgarh','raipur','bilaspur','cgpsc','cgvyapam']],
+  ['Goa',['goa','panaji','goa psc','goa ssc','iit goa']],
+  ['Gujarat',['gujarat','ahmedabad','gandhinagar','surat','gpsc','gsssb']],
+  ['Haryana',['haryana','gurugram','gurgaon','faridabad','panchkula','hpsc','hssc']],
+  ['Himachal Pradesh',['himachal pradesh','shimla','dharamshala','hppsc','hpsssb']],
+  ['Jharkhand',['jharkhand','ranchi','jamshedpur','jpsc','jssc']],
+  ['Karnataka',['karnataka','bengaluru','bangalore','mysuru','mysore','dharwad','kpsc','kea']],
+  ['Kerala',['kerala','thiruvananthapuram','trivandrum','kochi','cochin','kozhikode','kerala psc']],
+  ['Madhya Pradesh',['madhya pradesh','bhopal','indore','jabalpur','mppsc','mpesb','mppeb']],
+  ['Maharashtra',['maharashtra','mumbai','pune','nagpur','nashik','mpsc','mahatransco','mahadiscom']],
+  ['Manipur',['manipur','imphal','manipur psc','mpsc manipur']],
+  ['Meghalaya',['meghalaya','shillong','meghalaya psc']],
+  ['Mizoram',['mizoram','aizawl','mizoram psc','phed mizoram']],
+  ['Nagaland',['nagaland','kohima','dimapur','nagaland psc']],
+  ['Odisha',['odisha','orissa','bhubaneswar','bhubaneshwar','cuttack','opsc','osssc','ossc']],
+  ['Punjab',['punjab','chandigarh punjab','ludhiana','amritsar','patiala','ppsc','psssb']],
+  ['Rajasthan',['rajasthan','jaipur','jodhpur','udaipur','rpsc','rsmssb']],
+  ['Sikkim',['sikkim','gangtok','sikkim psc']],
+  ['Tamil Nadu',['tamil nadu','chennai','coimbatore','madurai','tnpsc','tnusrb']],
+  ['Telangana',['telangana','hyderabad','secunderabad','tspsc','tgpsc']],
+  ['Tripura',['tripura','agartala','tpsc','tripura psc']],
+  ['Uttar Pradesh',['uttar pradesh','lucknow','prayagraj','allahabad','kanpur','varanasi','noida','uppsc','upsssc','up police']],
+  ['Uttarakhand',['uttarakhand','uttaranchal','dehradun','haridwar','ukpsc','uksssc']],
+  ['West Bengal',['west bengal','kolkata','calcutta','wbpsc','wbssc']],
+  ['Andaman and Nicobar Islands',['andaman and nicobar','port blair']],
+  ['Chandigarh',['chandigarh','chandigarh administration']],
+  ['Dadra and Nagar Haveli and Daman and Diu',['dadra and nagar haveli','daman and diu','daman','silvassa']],
+  ['Delhi',['delhi','new delhi','ncr','dsssb','delhi police']],
+  ['Jammu and Kashmir',['jammu and kashmir','jammu & kashmir','jammu','srinagar','jkpsc','jkssb']],
+  ['Ladakh',['ladakh','leh','kargil']],
+  ['Lakshadweep',['lakshadweep','kavaratti']],
+  ['Puducherry',['puducherry','pondicherry']]
+];
 const $ = id => document.getElementById(id);
 const esc = value => String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 const formatDate = value => { if (!value) return 'N/A'; const d = new Date(value); return isNaN(d) ? value : d.toLocaleDateString('en-IN',{year:'numeric',month:'short',day:'numeric'}); };
 
 async function api(path) { const response = await fetch(`/api/${path}`, {headers:{Accept:'application/json'}}); if (!response.ok) throw new Error(`API ${response.status}`); return response.json(); }
 function showLoading(show) { const overlay=$('loading-overlay'); if(overlay) overlay.style.display=show?'flex':'none'; }
-function processJob(job, index) { return {...job, id: job.id || `job-${index}`}; }
+function normalizedText(value) { return String(value || '').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g,' ').trim(); }
+function hasTerm(text, term) { return (` ${text} `).includes(` ${normalizedText(term)} `); }
+function canonicalState(value) { const text=normalizedText(value); if(!text)return ''; const exact=STATE_ALIASES.find(([state,aliases])=>normalizedText(state)===text||aliases.some(alias=>normalizedText(alias)===text)); return exact?exact[0]:''; }
+function inferJobState(job) {
+  const explicit=canonicalState(job.state);
+  if(explicit)return explicit;
+  const text=normalizedText([job.title,job.board,job.source,job.location].filter(Boolean).join(' | '));
+  if(!text)return '';
+  const match=STATE_ALIASES.find(([,aliases])=>aliases.some(alias=>hasTerm(text,alias)));
+  return match?match[0]:'';
+}
+function processJob(job, index) { return {...job, id: job.id || `job-${index}`, state: inferJobState(job) || null}; }
 
 async function loadJobs() {
   showLoading(true);
