@@ -2,6 +2,15 @@
 
 GovJob India is a government-jobs portal with a Google Apps Script scraping/API backend, Google Sheets persistence, and a static frontend on Cloudflare Pages.
 
+## Live site and public API
+
+- **Live site:** [https://govjob-india.pages.dev/](https://govjob-india.pages.dev/)
+- **API health:** [https://govjob-india.pages.dev/api/health](https://govjob-india.pages.dev/api/health)
+- **Jobs:** [https://govjob-india.pages.dev/api/jobs?offset=0&limit=50](https://govjob-india.pages.dev/api/jobs?offset=0&limit=50)
+- **Jobs snapshot:** [https://govjob-india.pages.dev/api/snapshot](https://govjob-india.pages.dev/api/snapshot)
+
+These public Cloudflare proxy URLs are the supported API entry points. The private Apps Script upstream URL is intentionally not published.
+
 ## Architecture
 
 1. Time-driven Apps Script triggers scrape all configured listing pages in batches.
